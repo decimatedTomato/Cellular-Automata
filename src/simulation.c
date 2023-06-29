@@ -22,7 +22,7 @@
 #define GRID_HEIGHT 50
 
 #define VERTEX_SHADER_FILE_PATH "res/Shaders/vertex_old.glsl"
-#define SHADER_FILE_PATH "res/Shaders/frag_test.glsl"
+#define SHADER_FILE_PATH "res/Shaders/holes_in_holes.glsl"
 
 #define START_PAUSED true
 
@@ -36,6 +36,46 @@ int window_width = DEFAULT_WINDOW_WIDTH;
 int window_height = DEFAULT_WINDOW_HEIGHT;
 bool is_fullscreen = false;
 
+// IMAGES
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image/stb_image.h"
+#define TARGET_IMAGE "res/Image/texture.jpg"
+
+void load_image_texture(int slot, unsigned char **img) {
+    stbi_set_flip_vertically_on_load(1);
+    int width, height, channels;
+    *img = stbi_load(TARGET_IMAGE, &width, &height, &channels, 0);
+    // printf("width %d height %d channels %d\n", width, height, channels);
+    if (img == NULL) {
+        printf("Error loading the image\n");
+        exit(1);
+    }
+
+    GLuint texture_map;
+    glBindTexture(GL_TEXTURE_2D, texture_map);
+    glGenTextures(1, &texture_map);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+    glActiveTexture(GL_TEXTURE0 + slot);
+    // Made for jpeg (3 channels)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, img);
+    stbi_image_free(img);
+}
+
+void init_texture() {
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+    glActiveTexture(GL_TEXTURE0);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, GRID_WIDTH, GRID_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, current_grid);
+}
+
 /* Update everything in simulation */
 void update() {
     for (unsigned int i = 0; i < GRID_WIDTH; i++) {
@@ -43,7 +83,7 @@ void update() {
             // update_position(i, j);
         }
     }
-    // glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GRID_WIDTH, GRID_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, current_grid);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GRID_WIDTH, GRID_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, current_grid);
 }
 
 void load() {
