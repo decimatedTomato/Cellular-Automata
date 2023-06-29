@@ -1,2 +1,14 @@
 ## PURPOSE
-The purpose of this repository is to act as a basic setup for a project that will use OpenGL to render shaders in c.
+Trying my hand at creating some famous cellular automata, and maybe inventing some new ones, using shaders
+
+## What may appear
+- Game of life
+- Smooth life
+- Lenia 
+- Generalized smooth kernels
+- Bob's brain
+- Wireworld
+- Huegene
+- Elementary Automata
+
+This is obviously just a list of every cellular automata I have heard of.
