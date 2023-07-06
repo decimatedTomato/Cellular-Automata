@@ -209,28 +209,33 @@ void init_Quad() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), square_indices, GL_STATIC_DRAW);
 }
 
-void init_Shader(char *vertex_filepath, char *fragment_filepath) {
+unsigned int init_Shader(char *vertex_filepath, char *fragment_filepath) {
     char *vertex_shader = readFile(vertex_filepath);
     char *fragment_shader = readFile(fragment_filepath);
-    current_shader = CreateShader(vertex_shader, fragment_shader);
+    unsigned int shader = CreateShader(vertex_shader, fragment_shader);
     free(vertex_shader);
     free(fragment_shader);
+    return shader;
+}
+
+void set_shader(unsigned int shader) {
+    current_shader = shader;
     glUseProgram(current_shader);
 }
 
 void init_Uniforms() {
     location_time = glGetUniformLocation(current_shader, "u_time");
-    assert(location_time != -1);
+    // assert(location_time != -1);
     glUniform1f(location_time, glfwGetTime());    
 
     location_resolution = glGetUniformLocation(current_shader, "u_resolution");
-    assert(location_resolution != -1);
+    // assert(location_resolution != -1);
     glfwGetWindowSize(window, &window_width, &window_height);
     glViewport(0, 0, window_width, window_height);
     glUniform2f(location_resolution, window_width, window_height);
 
     location_texture = glGetUniformLocation(current_shader, "u_texture");
-    // assert(location_texture != -1);
+    assert(location_texture != -1);
     glUniform1i(location_texture, 0);
 }
 
@@ -282,12 +287,17 @@ void take_user_input() {
 bool render_frame() {
     /* Render here */
     glClear(GL_COLOR_BUFFER_BIT);
-    
-    /* Update uniforms */
+
+    /* Update Uniforms*/
     glfwGetWindowSize(window, &window_width, &window_height);
     glViewport(0, 0, window_width, window_height);
+    /* Update processing uniforms */
+    glUniform2f(location_resolution, window_width, window_height);
+    /* Update rendering uniforms */
     glUniform2f(location_resolution, window_width, window_height);
     glUniform1f(location_time, glfwGetTime());
+
+    
 
     /* Draw the bound buffer With an index buffer SQUARE */
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);

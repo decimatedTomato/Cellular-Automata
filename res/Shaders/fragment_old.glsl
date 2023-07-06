@@ -15,7 +15,7 @@ uniform sampler2D u_texture;
 
 void main() {
     vec4 color = texture2D(u_texture, v_texCoords); // * v_color;
-    fragColor = color;
+    fragColor = color.rrra;
     // fragColor = vec4(color.rgb, 1.0);
     // if (gl_FragCoord.x < 20 || gl_FragCoord.y < 20 || gl_FragCoord.x > 620 || gl_FragCoord.y > 460) fragColor = vec4(1.0, 0.1, 0.5, 1.0);
 }

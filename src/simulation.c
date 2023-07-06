@@ -18,11 +18,12 @@
 // #define DEFAULT_WINDOW_WIDTH 640
 // #define DEFAULT_WINDOW_HEIGHT 480
 
-#define GRID_WIDTH 50
-#define GRID_HEIGHT 50
+#define GRID_WIDTH 50U
+#define GRID_HEIGHT 50U
 
 #define VERTEX_SHADER_FILE_PATH "res/Shaders/vertex_old.glsl"
-#define SHADER_FILE_PATH "res/Shaders/holes_in_holes.glsl"
+#define SHADER_FILE_PATH "res/Shaders/fragment_old.glsl"
+#define PROCESSING_SHADER_FILE_PATH "res/Shaders/GoL.glsl"
 
 #define START_PAUSED true
 
@@ -35,6 +36,10 @@ DisplayMode mode = PLAYING;
 int window_width = DEFAULT_WINDOW_WIDTH;
 int window_height = DEFAULT_WINDOW_HEIGHT;
 bool is_fullscreen = false;
+
+// BUFFERS
+uint32_t starting_grid[GRID_HEIGHT * GRID_WIDTH];
+GLuint frameBuffer;
 
 // IMAGES
 #define STB_IMAGE_IMPLEMENTATION
@@ -66,24 +71,39 @@ void load_image_texture(int slot, unsigned char **img) {
     stbi_image_free(img);
 }
 
+void init_grid() {
+    for (size_t j = 0; j < GRID_HEIGHT; j++)
+        for (size_t i = 0; i < GRID_WIDTH; i++) {
+            starting_grid[j * GRID_HEIGHT + i] = (rand() % 3 == 0) ? 0xFF0000FF : 0xFF000000;
+        }
+}
+
 void init_texture() {
+    // For grid
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
     glActiveTexture(GL_TEXTURE0);
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, GRID_WIDTH, GRID_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, current_grid);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, GRID_WIDTH, GRID_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, starting_grid);
+    GLuint starting_texture = 0;
+
+    // For frameBuffer
+    glGenFramebuffersEXT(1, &frameBuffer); // This is where GoL output will go, this will be drawn
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuffer); // Prepare to draw to it
+    // Enter starting texture
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, starting_texture, 0);
+
+    // Draw normally
+
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); // Unbind the framebuffer
 }
 
 /* Update everything in simulation */
 void update() {
-    for (unsigned int i = 0; i < GRID_WIDTH; i++) {
-        for (unsigned int j = 0; j < GRID_HEIGHT; j++) {
-            // update_position(i, j);
-        }
-    }
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GRID_WIDTH, GRID_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, current_grid);
+    
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GRID_WIDTH, GRID_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, starting_grid);
 }
 
 void load() {
@@ -115,10 +135,15 @@ int main() {
     init_Debug_Callback();
     init_Quad();
 
-    init_Shader(VERTEX_SHADER_FILE_PATH, SHADER_FILE_PATH);
+    unsigned int shader_rendering = init_Shader(VERTEX_SHADER_FILE_PATH, SHADER_FILE_PATH);
+    set_shader(shader_rendering);
+    init_Uniforms();
+    unsigned int shader_processing = init_shader(VERTEX_SHADER_FILE_PATH, PROCESSING_SHADER_FILE_PATH);
+    set_shader(shader_processing);
     init_Uniforms();
 
-    init_texture();
+    init_grid();
+    init_texture(); // input textures such as noise textures
 
     /* Loop until the user closes the window */
     bool keep_running = true;
@@ -128,6 +153,7 @@ int main() {
         if (mode != PAUSED) update();
     }
 
+    glDeleteFramebuffers(1, &frameBuffer);
     clean_up();
     return 0;
 }
